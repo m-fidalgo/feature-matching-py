@@ -29,14 +29,25 @@ def main():
     
     # só prossegue se há mais de 20 bons matches
     if len(good_matches) > 20:
-      matrix, mask = utils.get_homography(image_keypoints, webcam_keypoints, good_matches)
+      matrix, _ = utils.get_homography(image_keypoints, webcam_keypoints, good_matches)
+      
+      # pontos de destino
+      destinations = utils.get_destinations(target_image, matrix)
       
       # bounding box - contorno da imagem da webcam
-      bounding_box = utils.get_bounding_box(target_image, webcam_image, matrix)
+      bounding_box = utils.get_bounding_box(webcam_image, destinations)
       
       # transformar a imagem de saída
-      warped_image = utils.transform_output(target_image, webcam_image, output_image, matrix)
+      output_image = utils.transform_output(target_image, webcam_image, output_image, matrix)
     
-      utils.display(target_image, webcam_image, image_features, bounding_box, warped_image)
+      # máscara sobre a imagem da webcam
+      masked_image = utils.get_masked_image(webcam_image, destinations)
+    
+      result = utils.overlay_images(masked_image, output_image)
+    
+      # exibindo as imagens
+      stacked_images = utils.stackImages(([target_image, webcam_image, bounding_box], [image_features, output_image, result]), 0.5)
+      cv2.imshow("images", stacked_images)
+      cv2.waitKey(0)
   
 main()

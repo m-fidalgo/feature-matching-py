@@ -6,8 +6,8 @@
 
 <h3>Funcionalidades</h3>
 <p>:heavy_check_mark: Reconhecer features na imagem alvo e no vídeo</p>
-<p>:hourglass: Fazer o match da imagem alvo com sua correspondente real</p>
-<p>:hourglass: Substituí-la por uma outra imagem</p>
+<p>:heavy_check_mark: Fazer o match da imagem alvo com sua correspondente real</p>
+<p>:heavy_check_mark: Substituí-la por uma outra imagem</p>
 
 <h3>Referências</h3>
 <a href="https://www.youtube.com/c/MurtazasWorkshopRoboticsandAI"><img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Murtaza's Workshop - Robotics and AI" /></a>

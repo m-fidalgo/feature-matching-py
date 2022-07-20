@@ -1,10 +1,36 @@
 import cv2
+import object_loader
 import utils
 
-def main():
+def mode_2d(target_image, webcam_image, image_features, bounding_box, masked_image, matrix):
+  # imagem que será sobreposta
+  output_image = cv2.imread('src/resources/book_cover_new.jpg')
+  
+  # transformar a imagem de saída
+  output_image = utils.transform_output(target_image, webcam_image, output_image, matrix)      
+
+  result = utils.overlay_images(masked_image, output_image)
+
+  # exibindo as imagens
+  stacked_images = utils.stackImages(([target_image, webcam_image, bounding_box], [image_features, output_image, result]), 0.5)
+  cv2.imshow("images", stacked_images)
+  cv2.waitKey(1)
+
+def mode_3d(target_image, bounding_box, matrix):
+  # carregar o objeto
+  object = object_loader.object("src/resources/chair.obj", swapyz=True)
+  
+  # matriz de projeção 3d
+  projection = utils.get_projection_matrix(matrix)
+  
+  # projeção do modelo
+  frame = utils.render(bounding_box.copy(), object, projection, target_image, 8)
+  cv2.imshow("frame", frame)
+  cv2.waitKey(1)
+
+def main(mode):
   capture = cv2.VideoCapture(0)
   target_image = cv2.imread('src/resources/book_cover.jpg')
-  output_image = cv2.imread('src/resources/book_cover_new.jpg')
   
   # detector
   orb_detector = cv2.ORB_create(nfeatures=1000)
@@ -35,17 +61,12 @@ def main():
       # bounding box - contorno da imagem da webcam
       bounding_box = utils.get_bounding_box(webcam_image, destinations)
       
-      # transformar a imagem de saída
-      output_image = utils.transform_output(target_image, webcam_image, output_image, matrix)
-    
       # máscara sobre a imagem da webcam
       masked_image = utils.get_masked_image(webcam_image, destinations)
-    
-      result = utils.overlay_images(masked_image, output_image)
-    
-      # exibindo as imagens
-      stacked_images = utils.stackImages(([target_image, webcam_image, bounding_box], [image_features, output_image, result]), 0.5)
-      cv2.imshow("images", stacked_images)
-      cv2.waitKey(0)
-  
-main()
+      
+      if mode == "2d":
+        mode_2d(target_image, webcam_image, image_features, bounding_box, masked_image, matrix)
+      elif mode == "3d":
+        mode_3d(target_image, bounding_box, matrix)
+      
+main("3d")

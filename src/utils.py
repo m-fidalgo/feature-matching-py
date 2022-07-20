@@ -1,6 +1,8 @@
 import cv2
+import math
 import numpy as np
 
+# common
 def get_good_matches(image_descriptor, webcam_descriptor):
   matcher = cv2.BFMatcher()
   matches = matcher.knnMatch(image_descriptor, webcam_descriptor, k=2)
@@ -39,17 +41,6 @@ def get_bounding_box(webcam_image, destinations):
   # gerar o contorno do bounding box
   return cv2.polylines(webcam_image.copy(), [np.int32(destinations)], True, (255,0,255), 3)
 
-def transform_output(target_image, webcam_image, output_image, matrix):
-  # tamanhos
-  target_height, target_width, _ = target_image.shape
-  webcam_height, webcam_width, _ = webcam_image.shape
-  
-  # assegurar que as imagens têm o mesmo tamanho
-  output_image = cv2.resize(output_image, (target_width, target_height))
-  
-  # transformar a imagem de saída
-  return cv2.warpPerspective(output_image, matrix, (webcam_width, webcam_height))
-
 def get_masked_image(webcam_image, destinations):
   webcam_height, webcam_width, _ = webcam_image.shape
   
@@ -65,6 +56,18 @@ def get_masked_image(webcam_image, destinations):
   # preencher os locais que não correspondem à imagem alvo com a imagem da webcam
   masked_image = cv2.bitwise_and(webcam_image, webcam_image, mask = mask)
   return masked_image
+
+# sobreposição 2d
+def transform_output(target_image, webcam_image, output_image, matrix):
+  # tamanhos
+  target_height, target_width, _ = target_image.shape
+  webcam_height, webcam_width, _ = webcam_image.shape
+  
+  # assegurar que as imagens têm o mesmo tamanho
+  output_image = cv2.resize(output_image, (target_width, target_height))
+  
+  # transformar a imagem de saída
+  return cv2.warpPerspective(output_image, matrix, (webcam_width, webcam_height))
 
 def overlay_images(masked_image, output_image):
   return cv2.bitwise_or(output_image, masked_image)
@@ -96,3 +99,47 @@ def stackImages(images,scale,lables=[]):
         horizontal_concat = np.concatenate(images)
         vertical = horizontal
     return vertical
+
+# sobreposição 3d
+def get_projection_matrix(matrix):
+  camera_parameters = np.array([[800, 0, 320], [0, 800, 240], [0, 0, 1]])
+  
+  matrix = -1 * matrix
+  rotation_and_translation = np.dot(np.linalg.inv(camera_parameters), matrix)
+  col_1, col_2, col_3 = rotation_and_translation[:, 0], rotation_and_translation[:, 1], rotation_and_translation[:, 2]
+  
+  # normalizar vetores
+  norm = math.sqrt(np.linalg.norm(col_1, 2) * np.linalg.norm(col_2, 2))
+  rot_1, rot_2, translation = (col_1 / norm), (col_2 / norm), (col_3 / norm)
+  
+  # base ortonormal
+  c = rot_1 + rot_2
+  p = np.cross(rot_1, rot_2)
+  d = np.cross(c, p)
+  rot_1 = np.dot(c / np.linalg.norm(c, 2) + d / np.linalg.norm(d, 2), 1 / math.sqrt(2))
+  rot_2 = np.dot(c / np.linalg.norm(c, 2) - d / np.linalg.norm(d, 2), 1 / math.sqrt(2))
+  rot_3 = np.cross(rot_1, rot_2)
+  
+  # matriz de projeção 3d
+  projection = np.stack((rot_1, rot_2, rot_3, translation)).T
+  
+  return np.dot(camera_parameters, projection)
+
+def render(frame, object, projection, target_image, scale):
+  height, width, _ = target_image.shape
+  vertices = object.vertices
+  scale_matrix = np.eye(3) * scale
+  
+  for face in object.faces:
+    face_vertices = face[0]
+    points = np.array([vertices[vertex - 1] for vertex in face_vertices])
+    points = np.dot(points, scale_matrix)
+
+    # renderizar no meio da superfície - deslocar pontos
+    points = np.array([[p[0] + width / 2, p[1] + height / 2, p[2]] for p in points])
+    destination = cv2.perspectiveTransform(points.reshape(-1, 1, 3), projection)
+    frame_points = np.int32(destination)
+
+    cv2.fillConvexPoly(frame, frame_points, (137, 27, 211))
+
+  return frame

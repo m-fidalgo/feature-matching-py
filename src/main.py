@@ -28,8 +28,10 @@ def mode_3d(target_image, bounding_box, matrix):
   cv2.imshow("frame", frame)
   cv2.waitKey(1)
 
-def main(mode):
-  capture = cv2.VideoCapture(0)
+def main():
+  mode = int(input("(0) Modo 2D\n(1) Modo 3D\nResposta: "))
+  
+  capture = cv2.VideoCapture(1)
   target_image = cv2.imread('src/resources/book_cover.jpg')
   
   # detector
@@ -64,9 +66,9 @@ def main(mode):
       # máscara sobre a imagem da webcam
       masked_image = utils.get_masked_image(webcam_image, destinations)
       
-      if mode == "2d":
+      if mode == 0:
         mode_2d(target_image, webcam_image, image_features, bounding_box, masked_image, matrix)
-      elif mode == "3d":
+      elif mode == 1:
         mode_3d(target_image, bounding_box, matrix)
       
-main("3d")
+main()

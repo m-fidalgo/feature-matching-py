@@ -1,12 +1,10 @@
 import cv2
-import numpy as np
-
 import utils
 
 def main():
   capture = cv2.VideoCapture(0)
-  target_image = cv2.imread('resources/book_cover.jpg')
-  output_image = cv2.imread('resources/dog.jpeg')
+  target_image = cv2.imread('src/resources/book_cover.jpg')
+  output_image = cv2.imread('src/resources/book_cover_new.jpg')
   
   # detector
   orb_detector = cv2.ORB_create(nfeatures=1000)
